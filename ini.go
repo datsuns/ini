@@ -1,5 +1,7 @@
 package ini
 
+// to keep original data, comment and empty line are treated as "Invalid Entry"
+
 import (
 	"bufio"
 	"errors"
@@ -14,6 +16,7 @@ var SectionStartKey = regexp.MustCompile("^\\[.*\\]")
 type Entry struct {
 	key   string
 	value string
+	valid bool
 }
 
 func (e *Entry) Key() string {
@@ -22,6 +25,10 @@ func (e *Entry) Key() string {
 
 func (e *Entry) Value() string {
 	return e.value
+}
+
+func (e *Entry) Valid() bool {
+	return e.valid
 }
 
 func (e *Entry) Update(s string) {
@@ -51,15 +58,19 @@ func (s *Section) Entry(k string) *Entry {
 }
 
 func (s *Section) Add(k, v string) {
-	s.entries = append(s.entries, &Entry{key: k, value: v})
+	s.entries = append(s.entries, &Entry{key: k, value: v, valid: true})
+}
+
+func (s *Section) AddDummyEntry(k, v string) {
+	s.entries = append(s.entries, &Entry{key: k, value: v, valid: false})
 }
 
 func (s *Section) update(line string) {
-	p := strings.Split(line, "=")
-	if len(p) == 2 {
+	if ValidEntry(line) {
+		p := strings.Split(line, "=")
 		s.Add(p[0], p[1])
 	} else {
-		s.Add(p[0], "")
+		s.AddDummyEntry(line, "")
 	}
 }
 
@@ -74,6 +85,19 @@ func ParseSectionName(line string) string {
 	ret = strings.Replace(ret, "]", "", -1)
 	ret = strings.Replace(ret, " ", "", -1)
 	return ret
+}
+
+func ValidEntry(line string) bool {
+	if len(line) == 0 {
+		return false
+	}
+	if (line[0] == ';') || (line[0] == '#') {
+		return false
+	}
+	if strings.Index(line, "=") == -1 {
+		return false
+	}
+	return true
 }
 
 func (f *File) Header() []string {
@@ -130,6 +154,28 @@ func (f *File) Load(s string) error {
 	f.loadMain(scanner)
 	if err := scanner.Err(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (f *File) WriteFile(path string) error {
+	dest, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+	for _, h := range f.Header() {
+		dest.WriteString(h + "\n")
+	}
+	for _, s := range f.Sections() {
+		dest.WriteString("[" + s.Name() + "]\n")
+		for _, e := range s.Entries() {
+			if e.Valid() {
+				dest.WriteString(e.Key() + "=" + e.Value() + "\n")
+			} else {
+				dest.WriteString(e.Key() + e.Value() + "\n")
+			}
+		}
 	}
 	return nil
 }
