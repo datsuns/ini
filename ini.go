@@ -24,6 +24,10 @@ func (e *Entry) Value() string {
 	return e.value
 }
 
+func (e *Entry) Update(s string) {
+	e.value = s
+}
+
 type Section struct {
 	name    string
 	entries []*Entry
@@ -35,6 +39,15 @@ func (s *Section) Name() string {
 
 func (s *Section) Entries() []*Entry {
 	return s.entries
+}
+
+func (s *Section) Entry(k string) *Entry {
+	for _, e := range s.entries {
+		if e.Key() == k {
+			return e
+		}
+	}
+	return nil
 }
 
 func (s *Section) Add(k, v string) {
@@ -134,6 +147,15 @@ func Load(s string) (*File, error) {
 	return NewFile(s)
 }
 
+func (f *File) AddSection(name string) (*Section, error) {
+	if f.Section(name) != nil {
+		return nil, errors.New(fmt.Sprintf("section [%s] already exists", name))
+	}
+	ret := &Section{name: name}
+	f.sections = append(f.sections, ret)
+	return ret, nil
+}
+
 func (f *File) AddEntry(s, k, v string) error {
 	dest := f.Section(s)
 	if dest == nil {
@@ -143,11 +165,15 @@ func (f *File) AddEntry(s, k, v string) error {
 	return nil
 }
 
-func (f *File) AddSection(name string) (*Section, error) {
-	if f.Section(name) != nil {
-		return nil, errors.New(fmt.Sprintf("section [%s] already exists", name))
+func (f *File) ModifyEntry(s, k, v string) error {
+	section := f.Section(s)
+	if section == nil {
+		return errors.New(fmt.Sprintf("section [%s] not found", s))
 	}
-	ret := &Section{name: name}
-	f.sections = append(f.sections, ret)
-	return ret, nil
+	target := section.Entry(k)
+	if target == nil {
+		return errors.New(fmt.Sprintf("entry [%s]/%s not found", s, k))
+	}
+	target.Update(v)
+	return nil
 }
