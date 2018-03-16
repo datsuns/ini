@@ -68,7 +68,7 @@ func (s *Section) AddDummyEntry(k, v string) {
 func (s *Section) update(line string) {
 	if ValidEntry(line) {
 		p := strings.Split(line, "=")
-		s.Add(p[0], p[1])
+		s.Add(p[0], strings.Join(p[1:], "="))
 	} else {
 		s.AddDummyEntry(line, "")
 	}
@@ -221,6 +221,19 @@ func (f *File) ModifyEntry(s, k, v string) error {
 		return errors.New(fmt.Sprintf("entry [%s]/%s not found", s, k))
 	}
 	target.Update(v)
+	return nil
+}
+
+func (f *File) AppendEntry(s, k, v string) error {
+	section := f.Section(s)
+	if section == nil {
+		return errors.New(fmt.Sprintf("section [%s] not found", s))
+	}
+	target := section.Entry(k)
+	if target == nil {
+		return errors.New(fmt.Sprintf("entry [%s]/%s not found", s, k))
+	}
+	target.Update(target.Value() + "," + v)
 	return nil
 }
 
