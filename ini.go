@@ -2,8 +2,8 @@ package ini
 
 import (
 	"bufio"
-	//"errors"
-	//	"fmt"
+	"errors"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -37,12 +37,16 @@ func (s *Section) Entries() []*Entry {
 	return s.entries
 }
 
+func (s *Section) Add(k, v string) {
+	s.entries = append(s.entries, &Entry{key: k, value: v})
+}
+
 func (s *Section) update(line string) {
 	p := strings.Split(line, "=")
 	if len(p) == 2 {
-		s.entries = append(s.entries, &Entry{key: p[0], value: p[1]})
+		s.Add(p[0], p[1])
 	} else {
-		s.entries = append(s.entries, &Entry{key: p[0], value: ""})
+		s.Add(p[0], "")
 	}
 }
 
@@ -128,4 +132,22 @@ func NewFile(s string) (*File, error) {
 
 func Load(s string) (*File, error) {
 	return NewFile(s)
+}
+
+func (f *File) AddEntry(s, k, v string) error {
+	dest := f.Section(s)
+	if dest == nil {
+		return errors.New(fmt.Sprintf("section [%s] not found", s))
+	}
+	dest.Add(k, v)
+	return nil
+}
+
+func (f *File) AddSection(name string) (*Section, error) {
+	if f.Section(name) != nil {
+		return nil, errors.New(fmt.Sprintf("section [%s] already exists", name))
+	}
+	ret := &Section{name: name}
+	f.sections = append(f.sections, ret)
+	return ret, nil
 }
