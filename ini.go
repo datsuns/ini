@@ -53,9 +53,9 @@ type File struct {
 
 func ParseSectionName(line string) string {
 	ret := string(line)
-	strings.Replace(ret, "[", "", -1)
-	strings.Replace(ret, "]", "", -1)
-	strings.Replace(ret, " ", "", -1)
+	ret = strings.Replace(ret, "[", "", -1)
+	ret = strings.Replace(ret, "]", "", -1)
+	ret = strings.Replace(ret, " ", "", -1)
 	return ret
 }
 
