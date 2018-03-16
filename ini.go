@@ -16,18 +16,39 @@ type Entry struct {
 	value string
 }
 
+func (e *Entry) Key() string {
+	return e.key
+}
+
+func (e *Entry) Value() string {
+	return e.value
+}
+
 type Section struct {
 	name    string
-	entries []Entry
+	entries []*Entry
 }
 
 func (s *Section) Name() string {
 	return s.name
 }
 
+func (s *Section) Entries() []*Entry {
+	return s.entries
+}
+
+func (s *Section) update(line string) {
+	p := strings.Split(line, "=")
+	if len(p) == 2 {
+		s.entries = append(s.entries, &Entry{key: p[0], value: p[1]})
+	} else {
+		s.entries = append(s.entries, &Entry{key: p[0], value: ""})
+	}
+}
+
 type File struct {
 	header   []string
-	sections []Section
+	sections []*Section
 }
 
 func ParseSectionName(line string) string {
@@ -42,12 +63,21 @@ func (f *File) Header() []string {
 	return f.header
 }
 
-func (f *File) Sections() []Section {
+func (f *File) Sections() []*Section {
 	return f.sections
 }
 
 func (f *File) NumOfSections() int {
 	return len(f.sections)
+}
+
+func (f *File) Section(name string) *Section {
+	for _, s := range f.Sections() {
+		if name == s.Name() {
+			return s
+		}
+	}
+	return nil
 }
 
 func (f *File) loadMain(scanner *bufio.Scanner) {
@@ -57,8 +87,14 @@ func (f *File) loadMain(scanner *bufio.Scanner) {
 		line := scanner.Text()
 
 		if SectionStartKey.FindStringIndex(line) != nil {
-			section = &Section{name: ParseSectionName(line)}
-			f.sections = append(f.sections, *section)
+			name := ParseSectionName(line)
+			section = &Section{name: name}
+			f.sections = append(f.sections, section)
+			continue
+		}
+
+		if section != nil {
+			section.update(line)
 		}
 
 		if f.NumOfSections() == 0 {
