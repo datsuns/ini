@@ -177,3 +177,21 @@ func (f *File) ModifyEntry(s, k, v string) error {
 	target.Update(v)
 	return nil
 }
+
+func (f *File) HasValue(s, k, v string) bool {
+	section := f.Section(s)
+	if section == nil {
+		return false
+	}
+	entry := section.Entry(k)
+	if entry == nil {
+		return false
+	}
+	for _, p := range strings.Split(entry.Value(), ",") {
+		raw := strings.Replace(p, " ", "", -1)
+		if v == raw {
+			return true
+		}
+	}
+	return false
+}
