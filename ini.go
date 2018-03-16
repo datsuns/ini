@@ -1,12 +1,10 @@
 package ini
 
-import (
-	"fmt"
-)
+import ()
 
 type IniFile struct {
 }
 
-func Load(s string) (*IniFile, err) {
+func Load(s string) (*IniFile, error) {
 	return nil, nil
 }
