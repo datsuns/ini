@@ -6,6 +6,7 @@ import (
 	//	"fmt"
 	"os"
 	"regexp"
+	"strings"
 )
 
 var SectionStartKey = regexp.MustCompile("^\\[.*\\]")
@@ -20,13 +21,29 @@ type Section struct {
 	entries []Entry
 }
 
+func (s *Section) Name() string {
+	return s.name
+}
+
 type File struct {
 	header   []string
 	sections []Section
 }
 
+func ParseSectionName(line string) string {
+	ret := string(line)
+	strings.Replace(ret, "[", "", -1)
+	strings.Replace(ret, "]", "", -1)
+	strings.Replace(ret, " ", "", -1)
+	return ret
+}
+
 func (f *File) Header() []string {
 	return f.header
+}
+
+func (f *File) Sections() []Section {
+	return f.sections
 }
 
 func (f *File) NumOfSections() int {
@@ -34,11 +51,14 @@ func (f *File) NumOfSections() int {
 }
 
 func (f *File) loadMain(scanner *bufio.Scanner) {
+	var section *Section
+	section = nil
 	for scanner.Scan() {
 		line := scanner.Text()
 
 		if SectionStartKey.FindStringIndex(line) != nil {
-			f.sections = append(f.sections, Section{})
+			section = &Section{name: ParseSectionName(line)}
+			f.sections = append(f.sections, *section)
 		}
 
 		if f.NumOfSections() == 0 {
