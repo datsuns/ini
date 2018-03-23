@@ -14,25 +14,13 @@ import (
 var SectionStartKey = regexp.MustCompile("^\\[.*\\]")
 
 type Entry struct {
-	key   string
-	value string
-	valid bool
-}
-
-func (e *Entry) Key() string {
-	return e.key
-}
-
-func (e *Entry) Value() string {
-	return e.value
-}
-
-func (e *Entry) Valid() bool {
-	return e.valid
+	Key   string
+	Value string
+	Valid bool
 }
 
 func (e *Entry) Update(s string) {
-	e.value = s
+	e.Value = s
 }
 
 type Section struct {
@@ -50,7 +38,7 @@ func (s *Section) Entries() []*Entry {
 
 func (s *Section) Entry(k string) *Entry {
 	for _, e := range s.entries {
-		if e.Key() == k {
+		if e.Key == k {
 			return e
 		}
 	}
@@ -58,11 +46,11 @@ func (s *Section) Entry(k string) *Entry {
 }
 
 func (s *Section) Add(k, v string) {
-	s.entries = append(s.entries, &Entry{key: k, value: v, valid: true})
+	s.entries = append(s.entries, &Entry{Key: k, Value: v, Valid: true})
 }
 
 func (s *Section) AddDummyEntry(k, v string) {
-	s.entries = append(s.entries, &Entry{key: k, value: v, valid: false})
+	s.entries = append(s.entries, &Entry{Key: k, Value: v, Valid: false})
 }
 
 func (s *Section) update(line string) {
@@ -170,10 +158,10 @@ func (f *File) WriteFile(path string) error {
 	for _, s := range f.Sections() {
 		dest.WriteString("[" + s.Name() + "]\n")
 		for _, e := range s.Entries() {
-			if e.Valid() {
-				dest.WriteString(e.Key() + "=" + e.Value() + "\n")
+			if e.Valid {
+				dest.WriteString(e.Key + "=" + e.Value + "\n")
 			} else {
-				dest.WriteString(e.Key() + e.Value() + "\n")
+				dest.WriteString(e.Key + e.Value + "\n")
 			}
 		}
 	}
@@ -233,7 +221,7 @@ func (f *File) AppendEntry(s, k, v string) error {
 	if target == nil {
 		return errors.New(fmt.Sprintf("entry [%s]/%s not found", s, k))
 	}
-	target.Update(target.Value() + "," + v)
+	target.Update(target.Value + "," + v)
 	return nil
 }
 
@@ -246,7 +234,7 @@ func (f *File) HasValue(s, k, v string) bool {
 	if entry == nil {
 		return false
 	}
-	for _, p := range strings.Split(entry.Value(), ",") {
+	for _, p := range strings.Split(entry.Value, ",") {
 		raw := strings.Replace(p, " ", "", -1)
 		if v == raw {
 			return true
