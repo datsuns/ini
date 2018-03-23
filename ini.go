@@ -12,6 +12,25 @@ import (
 )
 
 var SectionStartKey = regexp.MustCompile("^\\[.*\\]")
+var SectionTitleTrim = regexp.MustCompile(`\[|\]| `)
+
+func ParseSectionName(line string) string {
+	ret := string(line)
+	return SectionTitleTrim.ReplaceAllString(ret, "")
+}
+
+func ValidEntry(line string) bool {
+	if len(line) == 0 {
+		return false
+	}
+	if (line[0] == ';') || (line[0] == '#') {
+		return false
+	}
+	if strings.Index(line, "=") == -1 {
+		return false
+	}
+	return true
+}
 
 type Entry struct {
 	Key   string
@@ -21,6 +40,14 @@ type Entry struct {
 
 func (e *Entry) Update(s string) {
 	e.Value = s
+}
+
+func (e *Entry) String() string {
+	if e.Valid {
+		return fmt.Sprintf("%v=%v", e.Key, e.Value)
+	} else {
+		return fmt.Sprintf("%v%v", e.Key, e.Value)
+	}
 }
 
 type Section struct {
@@ -57,27 +84,6 @@ func (s *Section) update(line string) {
 type File struct {
 	Header   []string
 	Sections []*Section
-}
-
-func ParseSectionName(line string) string {
-	ret := string(line)
-	ret = strings.Replace(ret, "[", "", -1)
-	ret = strings.Replace(ret, "]", "", -1)
-	ret = strings.Replace(ret, " ", "", -1)
-	return ret
-}
-
-func ValidEntry(line string) bool {
-	if len(line) == 0 {
-		return false
-	}
-	if (line[0] == ';') || (line[0] == '#') {
-		return false
-	}
-	if strings.Index(line, "=") == -1 {
-		return false
-	}
-	return true
 }
 
 func (f *File) NumOfSections() int {
@@ -130,26 +136,30 @@ func (f *File) Load(s string) error {
 	return nil
 }
 
+func (f *File) Write(w *bufio.Writer) error {
+	for _, h := range f.Header {
+		w.WriteString(h + "\n")
+	}
+	for _, s := range f.Sections {
+		w.WriteString("[" + s.Name + "]\n")
+		for _, e := range s.Entries {
+			if e.Valid {
+				w.WriteString(e.Key + "=" + e.Value + "\n")
+			} else {
+				w.WriteString(e.Key + e.Value + "\n")
+			}
+		}
+	}
+	return nil
+}
+
 func (f *File) WriteFile(path string) error {
 	dest, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer dest.Close()
-	for _, h := range f.Header {
-		dest.WriteString(h + "\n")
-	}
-	for _, s := range f.Sections {
-		dest.WriteString("[" + s.Name + "]\n")
-		for _, e := range s.Entries {
-			if e.Valid {
-				dest.WriteString(e.Key + "=" + e.Value + "\n")
-			} else {
-				dest.WriteString(e.Key + e.Value + "\n")
-			}
-		}
-	}
-	return nil
+	return f.Write(bufio.NewWriter(dest))
 }
 
 func NewFile(s string) (*File, error) {
