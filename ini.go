@@ -24,20 +24,12 @@ func (e *Entry) Update(s string) {
 }
 
 type Section struct {
-	name    string
-	entries []*Entry
-}
-
-func (s *Section) Name() string {
-	return s.name
-}
-
-func (s *Section) Entries() []*Entry {
-	return s.entries
+	Name    string
+	Entries []*Entry
 }
 
 func (s *Section) Entry(k string) *Entry {
-	for _, e := range s.entries {
+	for _, e := range s.Entries {
 		if e.Key == k {
 			return e
 		}
@@ -46,11 +38,11 @@ func (s *Section) Entry(k string) *Entry {
 }
 
 func (s *Section) Add(k, v string) {
-	s.entries = append(s.entries, &Entry{Key: k, Value: v, Valid: true})
+	s.Entries = append(s.Entries, &Entry{Key: k, Value: v, Valid: true})
 }
 
 func (s *Section) AddDummyEntry(k, v string) {
-	s.entries = append(s.entries, &Entry{Key: k, Value: v, Valid: false})
+	s.Entries = append(s.Entries, &Entry{Key: k, Value: v, Valid: false})
 }
 
 func (s *Section) update(line string) {
@@ -102,7 +94,7 @@ func (f *File) NumOfSections() int {
 
 func (f *File) Section(name string) *Section {
 	for _, s := range f.Sections() {
-		if name == s.Name() {
+		if name == s.Name {
 			return s
 		}
 	}
@@ -117,7 +109,7 @@ func (f *File) loadMain(scanner *bufio.Scanner) {
 
 		if SectionStartKey.FindStringIndex(line) != nil {
 			name := ParseSectionName(line)
-			section = &Section{name: name}
+			section = &Section{Name: name}
 			f.sections = append(f.sections, section)
 			continue
 		}
@@ -156,8 +148,8 @@ func (f *File) WriteFile(path string) error {
 		dest.WriteString(h + "\n")
 	}
 	for _, s := range f.Sections() {
-		dest.WriteString("[" + s.Name() + "]\n")
-		for _, e := range s.Entries() {
+		dest.WriteString("[" + s.Name + "]\n")
+		for _, e := range s.Entries {
 			if e.Valid {
 				dest.WriteString(e.Key + "=" + e.Value + "\n")
 			} else {
@@ -185,7 +177,7 @@ func (f *File) AddSection(name string) (*Section, error) {
 	if f.Section(name) != nil {
 		return nil, errors.New(fmt.Sprintf("section [%s] already exists", name))
 	}
-	ret := &Section{name: name}
+	ret := &Section{Name: name}
 	f.sections = append(f.sections, ret)
 	return ret, nil
 }
