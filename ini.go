@@ -55,8 +55,8 @@ func (s *Section) update(line string) {
 }
 
 type File struct {
-	header   []string
-	sections []*Section
+	Header   []string
+	Sections []*Section
 }
 
 func ParseSectionName(line string) string {
@@ -80,20 +80,12 @@ func ValidEntry(line string) bool {
 	return true
 }
 
-func (f *File) Header() []string {
-	return f.header
-}
-
-func (f *File) Sections() []*Section {
-	return f.sections
-}
-
 func (f *File) NumOfSections() int {
-	return len(f.sections)
+	return len(f.Sections)
 }
 
 func (f *File) Section(name string) *Section {
-	for _, s := range f.Sections() {
+	for _, s := range f.Sections {
 		if name == s.Name {
 			return s
 		}
@@ -110,7 +102,7 @@ func (f *File) loadMain(scanner *bufio.Scanner) {
 		if SectionStartKey.FindStringIndex(line) != nil {
 			name := ParseSectionName(line)
 			section = &Section{Name: name}
-			f.sections = append(f.sections, section)
+			f.Sections = append(f.Sections, section)
 			continue
 		}
 
@@ -119,7 +111,7 @@ func (f *File) loadMain(scanner *bufio.Scanner) {
 		}
 
 		if f.NumOfSections() == 0 {
-			f.header = append(f.header, line)
+			f.Header = append(f.Header, line)
 		}
 	}
 }
@@ -144,10 +136,10 @@ func (f *File) WriteFile(path string) error {
 		return err
 	}
 	defer dest.Close()
-	for _, h := range f.Header() {
+	for _, h := range f.Header {
 		dest.WriteString(h + "\n")
 	}
-	for _, s := range f.Sections() {
+	for _, s := range f.Sections {
 		dest.WriteString("[" + s.Name + "]\n")
 		for _, e := range s.Entries {
 			if e.Valid {
@@ -178,7 +170,7 @@ func (f *File) AddSection(name string) (*Section, error) {
 		return nil, errors.New(fmt.Sprintf("section [%s] already exists", name))
 	}
 	ret := &Section{Name: name}
-	f.sections = append(f.sections, ret)
+	f.Sections = append(f.Sections, ret)
 	return ret, nil
 }
 
