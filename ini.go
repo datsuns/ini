@@ -137,6 +137,7 @@ func (f *File) Load(s string) error {
 }
 
 func (f *File) Write(w *bufio.Writer) error {
+	defer w.Flush()
 	for _, h := range f.Header {
 		w.WriteString(h + "\n")
 	}
@@ -159,7 +160,8 @@ func (f *File) WriteFile(path string) error {
 		return err
 	}
 	defer dest.Close()
-	return f.Write(bufio.NewWriter(dest))
+	ret := f.Write(bufio.NewWriter(dest))
+	return ret
 }
 
 func NewFile(s string) (*File, error) {
@@ -206,6 +208,7 @@ func (f *File) ModifyEntry(s, k, v string) error {
 	return nil
 }
 
+// TODO  append w/ "," if the 1st entry...
 func (f *File) AppendEntry(s, k, v string) error {
 	section := f.Section(s)
 	if section == nil {
