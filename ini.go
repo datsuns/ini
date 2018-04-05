@@ -208,7 +208,6 @@ func (f *File) ModifyEntry(s, k, v string) error {
 	return nil
 }
 
-// TODO  append w/ "," if the 1st entry...
 func (f *File) AppendEntry(s, k, v string) error {
 	section := f.Section(s)
 	if section == nil {
@@ -218,7 +217,11 @@ func (f *File) AppendEntry(s, k, v string) error {
 	if target == nil {
 		return errors.New(fmt.Sprintf("entry [%s]/%s not found", s, k))
 	}
-	target.Update(target.Value + "," + v)
+	if target.Value == "" {
+		target.Update(v)
+	} else {
+		target.Update(target.Value + "," + v)
+	}
 	return nil
 }
 
