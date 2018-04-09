@@ -38,7 +38,7 @@ type Entry struct {
 	Valid bool
 }
 
-func (e *Entry) Update(s string) {
+func (e *Entry) OverWrite(s string) {
 	e.Value = s
 }
 
@@ -164,17 +164,17 @@ func (f *File) WriteFile(path string) error {
 	return ret
 }
 
-func NewFile(s string) (*File, error) {
+func NewFile(file string) (*File, error) {
 	ret := &File{}
-	err := ret.Load(s)
+	err := ret.Load(file)
 	if err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
 
-func Load(s string) (*File, error) {
-	return NewFile(s)
+func Load(file string) (*File, error) {
+	return NewFile(file)
 }
 
 func (f *File) AddSection(name string) (*Section, error) {
@@ -204,7 +204,7 @@ func (f *File) ModifyEntry(s, k, v string) error {
 	if target == nil {
 		return errors.New(fmt.Sprintf("entry [%s]/%s not found", s, k))
 	}
-	target.Update(v)
+	target.OverWrite(v)
 	return nil
 }
 
@@ -218,9 +218,9 @@ func (f *File) AppendEntry(s, k, v string) error {
 		return errors.New(fmt.Sprintf("entry [%s]/%s not found", s, k))
 	}
 	if target.Value == "" {
-		target.Update(v)
+		target.OverWrite(v)
 	} else {
-		target.Update(target.Value + "," + v)
+		target.OverWrite(target.Value + "," + v)
 	}
 	return nil
 }
