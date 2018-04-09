@@ -14,6 +14,7 @@ import (
 
 var SectionStartKey = regexp.MustCompile("^\\[.*\\]")
 var SectionTitleTrim = regexp.MustCompile(`\[|\]| `)
+var ValueSeparator = ","
 
 func ParseSectionName(line string) string {
 	ret := string(line)
@@ -41,6 +42,14 @@ type Entry struct {
 
 func (e *Entry) OverWrite(s string) {
 	e.Value = s
+}
+
+func (e *Entry) Append(s string) {
+	if e.Value == "" {
+		e.Value = s
+	} else {
+		e.Value = e.Value + ValueSeparator + s
+	}
 }
 
 func (e *Entry) String() string {
@@ -200,19 +209,6 @@ func (f *File) AddEntry(s, k, v string) error {
 	return nil
 }
 
-func (f *File) ModifyEntry(s, k, v string) error {
-	section := f.Section(s)
-	if section == nil {
-		return errors.New(fmt.Sprintf("section [%s] not found", s))
-	}
-	target := section.Entry(k)
-	if target == nil {
-		return errors.New(fmt.Sprintf("entry [%s]/%s not found", s, k))
-	}
-	target.OverWrite(v)
-	return nil
-}
-
 func (f *File) AppendEntry(s, k, v string) error {
 	section := f.Section(s)
 	if section == nil {
@@ -222,11 +218,7 @@ func (f *File) AppendEntry(s, k, v string) error {
 	if target == nil {
 		return errors.New(fmt.Sprintf("entry [%s]/%s not found", s, k))
 	}
-	if target.Value == "" {
-		target.OverWrite(v)
-	} else {
-		target.OverWrite(target.Value + "," + v)
-	}
+	target.Append(v)
 	return nil
 }
 
@@ -239,7 +231,7 @@ func (f *File) HasValue(s, k, v string) bool {
 	if entry == nil {
 		return false
 	}
-	for _, p := range strings.Split(entry.Value, ",") {
+	for _, p := range strings.Split(entry.Value, ValueSeparator) {
 		raw := strings.Replace(p, " ", "", -1)
 		if v == raw {
 			return true
