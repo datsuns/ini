@@ -64,3 +64,24 @@ func TestNoSection(t *testing.T) {
 		t.Fatalf("ini should not have any entry")
 	}
 }
+
+func TestAddSection(t *testing.T) {
+	ini, err := LoadText("")
+	if err != nil {
+		t.Fatalf("load error [%v]", err)
+	}
+	s, err := ini.AddSection("section")
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	s.Add("key", "value")
+	if ini.HasValue("section", "key", "value") == false {
+		t.Fatalf("should have [section]/key == value")
+	}
+	expected := "[section]\nkey=value\n"
+	dest := &strings.Builder{}
+	ini.RawWrite(dest)
+	if expected != dest.String() {
+		t.Fatalf("output data not matched. [%s] != [%s]", expected, dest.String())
+	}
+}
