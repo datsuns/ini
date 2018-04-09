@@ -99,7 +99,7 @@ func (f *File) Section(name string) *Section {
 	return nil
 }
 
-func (f *File) loadMain(scanner *bufio.Scanner) {
+func (f *File) Load(scanner *bufio.Scanner) {
 	var section *Section
 	section = nil
 	for scanner.Scan() {
@@ -120,20 +120,6 @@ func (f *File) loadMain(scanner *bufio.Scanner) {
 			f.Header = append(f.Header, line)
 		}
 	}
-}
-
-func (f *File) Load(s string) error {
-	fd, err := os.Open(s)
-	if err != nil {
-		return err
-	}
-	defer fd.Close()
-	scanner := bufio.NewScanner(fd)
-	f.loadMain(scanner)
-	if err := scanner.Err(); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (f *File) Write(w *bufio.Writer) error {
@@ -165,16 +151,30 @@ func (f *File) WriteFile(path string) error {
 }
 
 func NewFile(file string) (*File, error) {
-	ret := &File{}
-	err := ret.Load(file)
+	fd, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
-	return ret, nil
+	defer fd.Close()
+	scanner := bufio.NewScanner(fd)
+	return Scan(scanner)
 }
 
 func Load(file string) (*File, error) {
 	return NewFile(file)
+}
+
+func LoadText(t string) (*File, error) {
+	return Scan(bufio.NewScanner(strings.NewReader(t)))
+}
+
+func Scan(s *bufio.Scanner) (*File, error) {
+	ret := &File{}
+	ret.Load(s)
+	if err := s.Err(); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func (f *File) AddSection(name string) (*Section, error) {
