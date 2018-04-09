@@ -87,6 +87,33 @@ type File struct {
 	Sections []*Section
 }
 
+func NewFileScan(s *bufio.Scanner) (*File, error) {
+	ret := &File{}
+	ret.Load(s)
+	if err := s.Err(); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func NewFile(file string) (*File, error) {
+	fd, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer fd.Close()
+	scanner := bufio.NewScanner(fd)
+	return NewFileScan(scanner)
+}
+
+func Load(file string) (*File, error) {
+	return NewFile(file)
+}
+
+func LoadText(t string) (*File, error) {
+	return NewFileScan(bufio.NewScanner(strings.NewReader(t)))
+}
+
 func (f *File) NumOfSections() int {
 	return len(f.Sections)
 }
@@ -123,11 +150,6 @@ func (f *File) Load(scanner *bufio.Scanner) {
 	}
 }
 
-func (f *File) Write(w *bufio.Writer) error {
-	defer w.Flush()
-	return f.RawWrite(w)
-}
-
 func (f *File) RawWrite(w io.Writer) error {
 	for _, h := range f.Header {
 		fmt.Fprintf(w, "%s\n", h)
@@ -145,6 +167,11 @@ func (f *File) RawWrite(w io.Writer) error {
 	return nil
 }
 
+func (f *File) Write(w *bufio.Writer) error {
+	defer w.Flush()
+	return f.RawWrite(w)
+}
+
 func (f *File) WriteFile(path string) error {
 	dest, err := os.Create(path)
 	if err != nil {
@@ -153,33 +180,6 @@ func (f *File) WriteFile(path string) error {
 	defer dest.Close()
 	ret := f.Write(bufio.NewWriter(dest))
 	return ret
-}
-
-func NewFile(file string) (*File, error) {
-	fd, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer fd.Close()
-	scanner := bufio.NewScanner(fd)
-	return Scan(scanner)
-}
-
-func Load(file string) (*File, error) {
-	return NewFile(file)
-}
-
-func LoadText(t string) (*File, error) {
-	return Scan(bufio.NewScanner(strings.NewReader(t)))
-}
-
-func Scan(s *bufio.Scanner) (*File, error) {
-	ret := &File{}
-	ret.Load(s)
-	if err := s.Err(); err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 func (f *File) AddSection(name string) (*Section, error) {
