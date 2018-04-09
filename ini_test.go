@@ -50,3 +50,17 @@ func TestParseSectionName(t *testing.T) {
 	}
 
 }
+
+func TestNoSection(t *testing.T) {
+	text := []string{
+		"\n",
+	}
+	input := formatInput(text)
+	ini, err := LoadText(input)
+	if err != nil {
+		t.Fatalf("load error [%v] %v", text, err)
+	}
+	if ini.HasValue("dummySection", "dummyEntry", "dummyValue") {
+		t.Fatalf("ini should not have any entry")
+	}
+}
