@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -124,16 +125,20 @@ func (f *File) Load(scanner *bufio.Scanner) {
 
 func (f *File) Write(w *bufio.Writer) error {
 	defer w.Flush()
+	return f.RawWrite(w)
+}
+
+func (f *File) RawWrite(w io.Writer) error {
 	for _, h := range f.Header {
-		w.WriteString(h + "\n")
+		fmt.Fprintf(w, "%s\n", h)
 	}
 	for _, s := range f.Sections {
-		w.WriteString("[" + s.Name + "]\n")
+		fmt.Fprintf(w, "[%s]\n", s.Name)
 		for _, e := range s.Entries {
 			if e.Valid {
-				w.WriteString(e.Key + "=" + e.Value + "\n")
+				fmt.Fprintf(w, "%s=%s\n", e.Key, e.Value)
 			} else {
-				w.WriteString(e.Key + e.Value + "\n")
+				fmt.Fprintf(w, "%s%s\n", e.Key, e.Value)
 			}
 		}
 	}

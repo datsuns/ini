@@ -17,8 +17,10 @@ func TestKeepFileHeader(t *testing.T) {
 		"a",
 		"[]",
 		";[]",
+		"\n",
 	}
-	ini, err := LoadText(formatInput(text))
+	input := formatInput(text)
+	ini, err := LoadText(input)
 	if err != nil {
 		t.Fatalf("load error [%v] %v", text, err)
 	}
@@ -26,6 +28,11 @@ func TestKeepFileHeader(t *testing.T) {
 		if s != text[i] {
 			t.Fatalf("invalid header [%v] != [%v]", text[i], s)
 		}
+	}
+	dest := &strings.Builder{}
+	ini.RawWrite(dest)
+	if input != dest.String() {
+		t.Fatalf("invalid output [%v] != [%v]", input, dest.String())
 	}
 }
 
