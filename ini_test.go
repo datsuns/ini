@@ -85,3 +85,31 @@ func TestAddSection(t *testing.T) {
 		t.Fatalf("output data not matched. [%s] != [%s]", expected, dest.String())
 	}
 }
+
+func TestAppendValue(t *testing.T) {
+	ini, err := LoadText("[section]\nkey=value\n")
+	if err != nil {
+		t.Fatalf("load error [%v]", err)
+	}
+	ini.AppendEntry("section", "key", "newValue")
+	expected := "[section]\nkey=value,newValue\n"
+	dest := &strings.Builder{}
+	ini.RawWrite(dest)
+	if expected != dest.String() {
+		t.Fatalf("output data not matched. [%s] != [%s]", expected, dest.String())
+	}
+}
+
+func TestAppendNewValue(t *testing.T) {
+	ini, err := LoadText("[section]\nkey=\n")
+	if err != nil {
+		t.Fatalf("load error [%v]", err)
+	}
+	ini.AppendEntry("section", "key", "newValue")
+	expected := "[section]\nkey=newValue\n"
+	dest := &strings.Builder{}
+	ini.RawWrite(dest)
+	if expected != dest.String() {
+		t.Fatalf("output data not matched. [%s] != [%s]", expected, dest.String())
+	}
+}
